@@ -3,8 +3,14 @@ require "em/rest/version"
 
 module EventMachine
   module Rest
-    #class Server < EventMachine::Connection
-    class Server
+    
+    class Connection < EventMachine::Connection
+      def initialize(resources)
+         @target = TargetResouces.new(resources)
+      end
+    end
+    
+    class TargetResources
       
       def initialize(resources)
         @resources = resources
@@ -60,7 +66,20 @@ module EventMachine
               end
               
             else
-               p "resource not found ..."
+              
+              if resObj.respond_to?:method_missing
+                params = resUrl.clone()
+                params.slice!(0)
+                return resObj.send(method,{ httpVerb: httpVerb,
+                                            httpUrl: httpUrl,
+                                            bodyReq: bodyReq,
+                                            resUrl: resUrl,
+                                            i: i,
+                                            params: params })
+              else 
+                raise TargetResourcesException.new("Resource Not Found")
+              end
+              
             end
           end
           
@@ -73,4 +92,11 @@ module EventMachine
       
     end
   end
+  
+  class TargetResourcesException < StandardError
+    def initialize(msg="Exception on target resouces")
+      super
+    end
+  end
+  
 end

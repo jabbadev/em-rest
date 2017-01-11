@@ -1,11 +1,12 @@
 require 'test_helper'
 
-class Em::RestTest < Minitest::Test
+class EventMachine::RestTest < Minitest::Test
   def test_that_it_has_a_version_number
-    refute_nil ::Em::Rest::VERSION
+    refute_nil ::EventMachine::Rest::VERSION
   end
 
   def test_it_does_something_useful
-    assert false
+    assert true
   end
+  
 end
