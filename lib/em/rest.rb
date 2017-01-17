@@ -47,7 +47,7 @@ module EventMachine
             else
               resObj = resObj.send(method,*params)
             end
-          else
+          else # no method on resource 
             if resObj.respond_to?:key
               
               if resObj.key?method
@@ -76,38 +76,48 @@ module EventMachine
                        resUrl: resUrl,
                        i: i,
                        urlParams: urlParams }
-                       
+              
+              methodHandled = false
+                        
               if !@customHandler.nil? and @customHandler.respond_to?:call
-                return @customHandler.call(@resources,args)
+                methodHandled = true
+                resObj = @customHandler.call(@resources,args)
               elsif !@customHandler.nil? and @customHandler.respond_to?method.to_sym
-                return @customHandler.send(method.to_sym,@resources,args)
+                methodHandled = true
+                resObj = @customHandler.send(method.to_sym,@resources,args)
               elsif !@customHandler.nil? and @customHandler.respond_to?:key
                 if @customHandler.key?method
                   custMeth = @customHandler[method]
                   if custMeth.respond_to?:call
-                    return custMeth.call(@resources,args)
+                    methodHandled = true
+                    resObj = custMeth.call(@resources,args)
                   end
                 elsif @customHandler.key?method.to_sym
                   custMeth = @customHandler[method.to_sym]
                   if custMeth.respond_to?:call
-                    return custMeth.call(@resources,args)
+                    methodHandled = true
+                    resObj = custMeth.call(@resources,args)
                   end
                 end 
-              else 
+              end 
               
+              unless methodHandled
                 nameHandler = "handler#{method.to_s.capitalize}".to_sym
               
                 if resObj.respond_to?nameHandler
-                  return resObj.send(nameHandler,args)
+                  resObj = resObj.send(nameHandler,args)
                 end
               
                 if resObj.respond_to?:method_missing
-                  return resObj.send(method,args)
+                  resObj = resObj.send(method,args)
                 else 
-                  raise TargetResourcesException.new("Resource Not Found")
+                  raise TargetResourcesException.new("Resource [#{method}] Not Found")
                 end
               
               end
+              
+              return resObj
+              
             end
           end
           
