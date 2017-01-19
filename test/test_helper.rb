@@ -50,6 +50,10 @@ class EmpireDB
     @data.select{|r| r[:name].include?name}
   end
   
+  def addToEmpire(args) 
+    p args
+  end
+  
 end
 
 class ObjectHandler
@@ -61,5 +65,27 @@ end
 module ModuleHandler
   def self.find_by_rank(resources,args)
     resources.empire.select{|r|r[:rank] == args[:urlParams][0]}
+  end
+end
+
+class GestNoEndParamUrl
+   
+  def _empire(empire,args) 
+    type = args[:urlParams][0]
+    lambda {|empire,args|
+      ## Gest index ## 
+      index = args[:urlParams][0].to_i
+      lambda {|empire,args|
+        ## Gest prop ##
+        prop = args[:urlParams][0]
+        lambda {|empire,args|
+          self.doEmpireRequest(empire,type,index,prop)
+        }
+      }
+    }
+  end
+  
+  def doEmpireRequest(empire,type,index,prop)
+    empire.empire.select{|r|type == r[:type]}[index][prop.to_sym]
   end
 end

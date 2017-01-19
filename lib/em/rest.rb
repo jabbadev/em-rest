@@ -17,10 +17,21 @@ module EventMachine
         @customHandler = customHandler
       end
       
-      def exec(httpVerb,httpUrl,bodyReq=nil)
+      def exec(arguments)
+        
+        httpVerb = arguments[:httpVerb]
+        httpUrl = arguments[:httpUrl]
+        bodyReq = arguments[:bodyReq]
+        arguments = {endUrlParams: true}.merge(arguments)
         
         resUrl = httpUrl.split('/')
-        resUrl.slice!(0)
+        resUrl.shift
+        
+        args = { httpVerb: httpVerb,
+                 httpUrl: httpUrl,
+                 bodyReq: bodyReq,
+                 resUrl: resUrl,
+                 urlParams: resUrl.clone() }
         
         resObj = @resources
         
@@ -28,18 +39,15 @@ module EventMachine
         resUrl.each_index  do |i|
           method = resUrl[i]
           params = []
-          
-          if httpVerb == "POST" or httpVerb == "PUT"
-            if (lastIndex == i )
-              params = JSON.load(bodyReq) unless bodyReq.nil?
-            end
-          end
+                    
+          args[:i] = i
+          args[:urlParams].shift
            
           if resObj.respond_to?:call
             if params.is_a?Array
-              resObj = resObj.call(*params)
+              resObj = resObj.call(@resources,args)
             else
-              resObj = resObj.call(params)
+              resObj = resObj.call(@resources,args)
             end
           elsif resObj.respond_to?method.to_sym
             if params.is_a?Array
@@ -67,16 +75,7 @@ module EventMachine
               end
               
             else
-              
-              urlParams = resUrl.clone()
-              urlParams.slice!(0)
-              args = { httpVerb: httpVerb,
-                       httpUrl: httpUrl,
-                       bodyReq: bodyReq,
-                       resUrl: resUrl,
-                       i: i,
-                       urlParams: urlParams }
-              
+                            
               methodHandled = false
                         
               if !@customHandler.nil? and @customHandler.respond_to?:call
@@ -106,35 +105,32 @@ module EventMachine
               
                 if resObj.respond_to?nameHandler
                   resObj = resObj.send(nameHandler,args)
-                end
-              
-                if resObj.respond_to?:method_missing
+                elsif resObj.respond_to?:method_missing
                   resObj = resObj.send(method,args)
                 else 
                   raise TargetResourcesException.new("Resource [#{method}] Not Found")
                 end
               
               end
-              
-              return resObj
-              
+                  
             end
           end
           
-        end
+          return resObj if arguments[:endUrlParams]
+          
+        end ## end loop on chunk url method
         
         resObj
-        
       end
-       
       
     end
-  end
   
-  class TargetResourcesException < StandardError
-    def initialize(msg="Exception on target resouces")
-      super
+    class TargetResourcesException < StandardError
+      def initialize(msg="Exception on target resouces")
+        super
+      end
     end
+  
   end
   
 end
