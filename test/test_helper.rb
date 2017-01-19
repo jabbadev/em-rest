@@ -50,9 +50,9 @@ class EmpireDB
     @data.select{|r| r[:name].include?name}
   end
   
-  def addToEmpire(args) 
-    p args
-  end
+#  def addToEmpire(args) 
+#    p args
+#  end
   
 end
 

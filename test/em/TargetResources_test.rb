@@ -41,8 +41,8 @@ describe EM::Rest::TargetResources do
     end
     
     it "POST request" do
-      resource = EM::Rest::TargetResources.new(EmpireDB.new)
-      resource.exec(httpVerb: "POST", httpUrl: "/addToEmpire",bodyReq: { name: "Kanan Jarrus", rank: "Padawan",type: "jedi" })
+      #resource = EM::Rest::TargetResources.new(EmpireDB.new)
+      #resource.exec(httpVerb: "POST", httpUrl: "/addToEmpire",bodyReq: { name: "Kanan Jarrus", rank: "Padawan",type: "jedi" })
       
       
     end

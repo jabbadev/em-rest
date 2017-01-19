@@ -50,11 +50,13 @@ module EventMachine
               resObj = resObj.call(@resources,args)
             end
           elsif resObj.respond_to?method.to_sym
-            if params.is_a?Array
-              resObj = resObj.send(method,*params)
-            else
-              resObj = resObj.send(method,*params)
-            end
+            p method.to_sym
+            resObj = resObj.send(method.to_sym,*params)
+#            if params.is_a?Array
+#              resObj = resObj.send(method,*params)
+#            else
+#              resObj = resObj.send(method,*params)
+#            end
           else # no method on resource 
             if resObj.respond_to?:key
               
