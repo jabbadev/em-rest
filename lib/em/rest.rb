@@ -86,27 +86,27 @@ module EventMachine
                             
               methodHandled = false
                         
-#              if !@customHandler.nil? and @customHandler.respond_to?:call
-#                methodHandled = true
-#                resObj = @customHandler.call(@resources,args)
-#              elsif !@customHandler.nil? and @customHandler.respond_to?method.to_sym
-#                methodHandled = true
-#                resObj = @customHandler.send(method.to_sym,@resources,args)
-#              elsif !@customHandler.nil? and @customHandler.respond_to?:key
-#                if @customHandler.key?method
-#                  custMeth = @customHandler[method]
-#                  if custMeth.respond_to?:call
-#                    methodHandled = true
-#                    resObj = custMeth.call(@resources,args)
-#                  end
-#                elsif @customHandler.key?method.to_sym
-#                  custMeth = @customHandler[method.to_sym]
-#                  if custMeth.respond_to?:call
-#                    methodHandled = true
-#                    resObj = custMeth.call(@resources,args)
-#                  end
-#                end 
-#              end 
+              if !@customHandler.nil? and @customHandler.respond_to?:call
+                methodHandled = true
+                resObj = @customHandler.call(@resources,args)
+              elsif !@customHandler.nil? and @customHandler.respond_to?method.to_sym
+                methodHandled = true
+                resObj = @customHandler.send(method.to_sym,@resources,args)
+              elsif !@customHandler.nil? and @customHandler.respond_to?:key
+                if @customHandler.key?method
+                  custMeth = @customHandler[method]
+                  if custMeth.respond_to?:call
+                    methodHandled = true
+                    resObj = custMeth.call(@resources,args)
+                  end
+                elsif @customHandler.key?method.to_sym
+                  custMeth = @customHandler[method.to_sym]
+                  if custMeth.respond_to?:call
+                    methodHandled = true
+                    resObj = custMeth.call(@resources,args)
+                  end
+                end 
+              end 
               
               unless methodHandled
                 
