@@ -55,6 +55,9 @@ module EventMachine
           elsif !@customHandler.nil? and @customHandler.respond_to?method.to_sym
             methodHandled = true
             resObj = @customHandler.send(method.to_sym,@resources,args)
+          elsif !@customHandler.nil? and @customHandler.respond_to?nameHandler
+            methodHandled = true
+            resObj = @customHandler.send(nameHandler,@resources,args)
           elsif !@customHandler.nil? and @customHandler.respond_to?:key
             if @customHandler.key?method
               custMeth = @customHandler[method]
@@ -105,9 +108,7 @@ module EventMachine
             else # no key as method
                             
               methodHandled = false
-                        
-
-              
+                       
               unless methodHandled
                 
                 if resObj.respond_to?:method_missing
