@@ -38,6 +38,8 @@ module EventMachine
         lastIndex = resUrl.size - 1
         resUrl.each_index  do |i|
           method = resUrl[i]
+          nameHandler = "handler#{method.to_s.capitalize}".to_sym
+          
           params = []
                     
           args[:i] = i
@@ -54,12 +56,13 @@ module EventMachine
               resObj = resObj.call(@resources,args)
             end
           elsif resObj.respond_to?method.to_sym
-            
             if params.is_a?Array
               resObj = resObj.send(method.to_sym,*params)
             else
               resObj = resObj.send(method.to_sym,params)
             end
+          elsif resObj.respond_to?nameHandler
+            resObj = resObj.send(nameHandler,args)
           else # no method on resource 
             if resObj.respond_to?:key
               
@@ -79,7 +82,7 @@ module EventMachine
                 resObj = obj
               end
               
-            else
+            else # no key as method
                             
               methodHandled = false
                         
@@ -106,11 +109,8 @@ module EventMachine
               end 
               
               unless methodHandled
-                nameHandler = "handler#{method.to_s.capitalize}".to_sym
-              
-                if resObj.respond_to?nameHandler
-                  resObj = resObj.send(nameHandler,args)
-                elsif resObj.respond_to?:method_missing
+                
+                if resObj.respond_to?:method_missing
                   resObj = resObj.send(method,args)
                 else 
                   raise TargetResourcesException.new("Resource [#{method}] Not Found")
