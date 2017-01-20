@@ -69,10 +69,7 @@ module EventMachine
                 resObj = custMeth.call(@resources,args)
               end
             end 
-          end 
-          
-                  
-          if resObj.respond_to?:call
+          elsif resObj.respond_to?:call
             if params.is_a?Array
               resObj = resObj.call(@resources,args)
             else
