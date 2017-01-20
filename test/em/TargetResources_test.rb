@@ -37,12 +37,12 @@ describe EM::Rest::TargetResources do
       resGestNoEndParamUrl.exec(httpVerb: "GET", httpUrl: "/_empire/sith/1/name", endUrlParams: false).must_equal("Darth Maul")
       resGestNoEndParamUrl.exec(httpVerb: "GET", httpUrl: "/_empire/sith/2/rank/upcase", endUrlParams: false).must_equal("APPRENTICE")
       
-      
     end
     
     it "POST request" do
-      #resource = EM::Rest::TargetResources.new(EmpireDB.new)
-      #resource.exec(httpVerb: "POST", httpUrl: "/addToEmpire",bodyReq: { name: "Kanan Jarrus", rank: "Padawan",type: "jedi" })
+      resource = EM::Rest::TargetResources.new(EmpireDB.new)
+      resource.exec(httpVerb: "POST", httpUrl: "/addToEmpire", bodyReq: { name: "Kanan Jarrus", rank: "Padawan",type: "jedi" })[:id].must_equal(6)
+      p resource.exec(httpVerb: "GET", httpUrl: "/empire/size").must_equal(7)
       
       
     end

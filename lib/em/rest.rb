@@ -42,7 +42,11 @@ module EventMachine
                     
           args[:i] = i
           args[:urlParams].shift
-           
+            
+          if ( httpVerb == 'POST' or httpVerb == 'PUT' ) and i == lastIndex
+            params = args[:bodyReq]
+          end
+         
           if resObj.respond_to?:call
             if params.is_a?Array
               resObj = resObj.call(@resources,args)
@@ -50,13 +54,12 @@ module EventMachine
               resObj = resObj.call(@resources,args)
             end
           elsif resObj.respond_to?method.to_sym
-            p method.to_sym
-            resObj = resObj.send(method.to_sym,*params)
-#            if params.is_a?Array
-#              resObj = resObj.send(method,*params)
-#            else
-#              resObj = resObj.send(method,*params)
-#            end
+            
+            if params.is_a?Array
+              resObj = resObj.send(method.to_sym,*params)
+            else
+              resObj = resObj.send(method.to_sym,params)
+            end
           else # no method on resource 
             if resObj.respond_to?:key
               
@@ -116,6 +119,7 @@ module EventMachine
               end
                   
             end
+            
           end
           
           return resObj if arguments[:endUrlParams]
