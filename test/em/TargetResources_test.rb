@@ -39,13 +39,13 @@ describe EM::Rest::TargetResources do
       
     end
     
-    it "POST request" do
-      resource = EM::Rest::TargetResources.new(EmpireDB.new)
-      resource.exec(httpVerb: "POST", httpUrl: "/addToEmpire", bodyReq: { name: "Kanan Jarrus", rank: "Padawan",type: "jedi" })[:id].must_equal(6)
-      p resource.exec(httpVerb: "GET", httpUrl: "/empire/size").must_equal(7)
-      
-      
-    end
+#    it "POST request" do
+#      resource = EM::Rest::TargetResources.new(EmpireDB.new)
+#      resource.exec(httpVerb: "POST", httpUrl: "/addToEmpire", bodyReq: { name: "Kanan Jarrus", rank: "Padawan",type: "jedi" })[:id].must_equal(6)
+#      p resource.exec(httpVerb: "GET", httpUrl: "/empire/size").must_equal(7)
+#      
+#      
+#    end
     
   end
   

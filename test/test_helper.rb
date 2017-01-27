@@ -19,19 +19,23 @@ class EmpireDB
     @data
   end
   
-  def method_missing(method,args)
-    if(method==:get)
-      if args[:urlParams][0] =~ /^\d+$/
-        return self.getByIndex(args[:urlParams][0].to_i)
-      else
-        if args[:urlParams][0] == "all"
-          return self.getAllEmpire(args[:urlParams][0])
-        else
-          return self.getByType(args[:urlParams][0],args[:urlParams][1].to_i) 
-        end
-      end
-    end
+  def get(index)
+    @data[index]
   end
+  
+#  def method_missing(method,args)
+#    if(method==:get)
+#      if args[:urlParams][0] =~ /^\d+$/
+#        return self.getByIndex(args[:urlParams][0].to_i)
+#      else
+#        if args[:urlParams][0] == "all"
+#          return self.getAllEmpire(args[:urlParams][0])
+#        else
+#          return self.getByType(args[:urlParams][0],args[:urlParams][1].to_i) 
+#        end
+#      end
+#    end
+#  end
   
   def getByIndex(i)
     @data[i]
