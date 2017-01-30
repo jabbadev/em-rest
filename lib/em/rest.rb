@@ -36,7 +36,10 @@ module EventMachine
         resObj = @resources
         
         lastIndex = resUrl.size - 1
-        resUrl.each_index  do |i|
+        #resUrl.each_index  do |i|
+        i = -1
+        while i < lastIndex
+          i += 1 
           method = resUrl[i]
           
           args[:params] = []
@@ -46,22 +49,32 @@ module EventMachine
           
           nextResInfo = nil
           resInfo = self._resInfo(method,resObj)
+          p resInfo
           unless lastIndex == i
-            nextMethod = resUrl[i+1]
-            nextResInfo = self._resInfo(nextMethod,resObj)
-            p nextResInfo.empty?,resInfo[:nargs], resInfo
-            if nextResInfo.empty? and resInfo[:nargs] == 1
-              p "bbbbb",nextMethod,nextMethod =~ /^\d+$/
-              if nextMethod =~ /^\d+$/ and arguments[:convertNumbers]
-                args[:params] = [ nextMethod.to_i ]
-              else
-                args[:params] = [ nextMethod ]
+            
+            if resInfo[:type] == :customBlock
+              resInfo[:name] = method.to_sym
+              if resInfo[:nargs] == 3 #### block with no arguments ####
+                args[:params] = self._nextUrlParam(resUrl[i+1],arguments)
+                i += 1  
               end
-              
+            elsif resInfo[:type] == :customMethod
+              if resInfo[:nargs] == 2
+                args[:params] = self._nextUrlParam(resUrl[i+1],arguments)
+                i += 1
+              end
+            elsif resInfo[:type] == :customHash
+              if resInfo[:nargs] == 2 #### block with no arguments ####
+                args[:params] = self._nextUrlParam(resUrl[i+1],arguments)
+                i += 1  
+              end
+            elsif resInfo[:type] == :method 
+              if resInfo[:nargs] == 1
+                args[:params] = self._nextUrlParam(resUrl[i+1],arguments)
+                i += 1
+              end
             end
-          end
-          
-          if i == lastIndex
+          else
             unless args[:reqParams].nil?
               
               if args[:reqParams].is_a?Array
@@ -73,92 +86,26 @@ module EventMachine
           end
           
           resObj = self.execCode(resInfo,resObj,args)
-         
-          
-#          if !@customHandler.nil? and @customHandler.respond_to?:call
-#            methodHandled = true
-#            resObj = @customHandler.call(@resources,args)
-#          elsif !@customHandler.nil? and @customHandler.respond_to?method.to_sym
-#            methodHandled = true
-#            resObj = @customHandler.send(method.to_sym,@resources,args)
-#          elsif !@customHandler.nil? and @customHandler.respond_to?nameHandler
-#            methodHandled = true
-#            resObj = @customHandler.send(nameHandler,@resources,args)
-#          elsif !@customHandler.nil? and @customHandler.respond_to?:key
-#            if @customHandler.key?method
-#              custMeth = @customHandler[method]
-#              if custMeth.respond_to?:call
-#                methodHandled = true
-#                resObj = custMeth.call(@resources,args)
-#              end
-#            elsif @customHandler.key?method.to_sym
-#              custMeth = @customHandler[method.to_sym]
-#              if custMeth.respond_to?:call
-#                methodHandled = true
-#                resObj = custMeth.call(@resources,args)
-#              end
-#            end 
-#          elsif resObj.respond_to?:call
-#            if params.is_a?Array
-#              resObj = resObj.call(@resources,args)
-#            else
-#              resObj = resObj.call(@resources,args)
-#            end
-#          elsif resObj.respond_to?method.to_sym
-#            if params.is_a?Array
-#              resObj = resObj.send(method.to_sym,*params)
-#            else
-#              resObj = resObj.send(method.to_sym,params)
-#            end
-#          elsif resObj.respond_to?nameHandler
-#            resObj = resObj.send(nameHandler,args)
-#          else # no method on resource 
-#            if resObj.respond_to?:key
-#              
-#              if resObj.key?method
-#                obj = resObj[method]
-#              elsif resObj.key?method.to_sym
-#                obj = resObj[method.to_sym]
-#              end
-#              
-#              if obj.respond_to?:call
-#                if params.is_a?Array
-#                  resObj = obj.call(*params)
-#                else
-#                  resObj = obj.call(params)
-#                end
-#              else
-#                resObj = obj
-#              end
-#              
-#            else # no key as method
-#                            
-#              methodHandled = false
-#                       
-#              unless methodHandled
-#                
-#                if resObj.respond_to?:method_missing
-#                  resObj = resObj.send(method,args)
-#                else 
-#                  raise TargetResourcesException.new("Resource [#{method}] Not Found")
-#                end
-#              
-#              end
-#                  
-#            end
-#            
-#          end
-#          
-#          return resObj if arguments[:endUrlParams]
-#          
+                   
         end ## end loop on chunk url method
         
         resObj
       end
       
+      def _nextUrlParam(nextMethod,arguments)
+        ( nextMethod =~ /^\d+$/ and arguments[:convertNumbers] ) ? [ nextMethod.to_i ] : [ nextMethod ]
+      end
+      
       def execCode(resInfo,resObj,args)
-        p args 
-        if resInfo[:type] == :method
+        if resInfo[:type] == :customBlock
+          args[:params].insert(0,resInfo[:name])
+          return @customHandler.call(resObj,*args[:params])
+        elsif resInfo[:type] == :customHash
+          return @customHandler[resInfo[:name]].call(resObj,*args[:params])
+        elsif resInfo[:type] == :customMethod
+          args[:params].insert(0,resObj)
+          return @customHandler.send(resInfo[:name],*args[:params])
+        elsif resInfo[:type] == :method
           return resObj.send(resInfo[:name],*args[:params])
         end
         
@@ -179,12 +126,12 @@ module EventMachine
           if @customHandler.key?method
             custMeth = @customHandler[method]
             if custMeth.respond_to?:call
-              resInfo = { name: nameHandler, type: :customHash, nargs: custMeth.arity }
+              resInfo = { name: method, type: :customHash, nargs: custMeth.arity }
             end
           elsif @customHandler.key?method.to_sym
             custMeth = @customHandler[method.to_sym]
             if custMeth.respond_to?:call
-              resInfo = { name: nameHandler, type: :customHash, nargs: custMeth.arity }
+              resInfo = { name: method.to_sym, type: :customHash, nargs: custMeth.arity }
             end
           end 
         elsif resObj.respond_to?:call
@@ -192,7 +139,7 @@ module EventMachine
         elsif resObj.respond_to?method.to_sym
           resInfo = { name: method.to_sym, type: :method, nargs: resObj.method(method.to_sym).arity}
         elsif resObj.respond_to?nameHandler
-          resInfo = { name: nameHandler, type: :handler, nargs: resObj.method(nameHandler).arity}
+          resInfo = { name: nameHandler, type: :method, nargs: resObj.method(nameHandler).arity}
         elsif resObj.respond_to?:key
           if resObj.key?method
             custMeth = resObj[method]

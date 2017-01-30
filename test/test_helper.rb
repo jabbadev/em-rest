@@ -22,35 +22,20 @@ class EmpireDB
   def get(index)
     @data[index]
   end
-  
-#  def method_missing(method,args)
-#    if(method==:get)
-#      if args[:urlParams][0] =~ /^\d+$/
-#        return self.getByIndex(args[:urlParams][0].to_i)
-#      else
-#        if args[:urlParams][0] == "all"
-#          return self.getAllEmpire(args[:urlParams][0])
-#        else
-#          return self.getByType(args[:urlParams][0],args[:urlParams][1].to_i) 
-#        end
-#      end
-#    end
-#  end
-  
+    
   def getByIndex(i)
     @data[i]
   end
 
-  def getByType(type,i)
-    @data.select{|r|type == r[:type]}[i]
+  def getByType(type)
+    @data.select{|r|type == r[:type]}
   end 
   
   def getAllEmpire(i)
     self.empire()
   end
   
-  def handlerFind_by_name(args)
-    name = args[:urlParams][0]
+  def handlerFind_by_name(name)
     @data.select{|r| r[:name].include?name}
   end
   
@@ -63,13 +48,13 @@ end
 
 class ObjectHandler
   def find_by_rank(resources,args)
-    resources.empire.select{|r|r[:rank] == args[:urlParams][0]}
+    resources.empire.select{|r|r[:rank] == args}
   end
 end
 
 module ModuleHandler
   def self.find_by_rank(resources,args)
-    resources.empire.select{|r|r[:rank] == args[:urlParams][0]}
+    resources.empire.select{|r|r[:rank] == args}
   end
 end
 

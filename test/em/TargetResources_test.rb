@@ -9,14 +9,20 @@ describe EM::Rest::TargetResources do
     it "GET request" do
       resource = EM::Rest::TargetResources.new(EmpireDB.new)
       resource.exec(httpVerb: "GET", httpUrl: "/empire")[0][:name].must_equal("Darth Sidious")
-      resource.exec(httpVerb: "GET", httpUrl: "/get/all").size.must_equal(6)
+      resource.exec(httpVerb: "GET", httpUrl: "/empire/at/3")[:name].must_equal("Luke Skywalker")
       resource.exec(httpVerb: "GET", httpUrl: "/get/3")[:name].must_equal("Luke Skywalker")
-      resource.exec(httpVerb: "GET", httpUrl: "/get/sith/2")[:name].must_equal("Darth Vader")
+      resource.exec(httpVerb: "GET", httpUrl: "/getByType/sith/at/2")[:name].must_equal("Darth Vader")
       resource.exec(httpVerb: "GET", httpUrl: "/find_by_name/Yo")[0][:rank].must_equal("Big Master")
       resource.exec(httpVerb: "GET", httpUrl: "/find_by_name/Dart").size.must_equal(3)
       
-      resCodeHandler = EM::Rest::TargetResources.new(EmpireDB.new,lambda{|resources,args| resources.empire.select{|r| r[:rank] == args[:urlParams][0]} })
-      resCodeHandler.exec(httpVerb: "GET", httpUrl: "/find_by_rank/Master").size.must_equal(3)
+      resCustomCodeHandler = EM::Rest::TargetResources.new(EmpireDB.new,lambda{|empireDB,method,args|
+        if method == :find_by_rank 
+          empireDB.empire.select{|r| r[:rank] == args }
+        else
+          raise EM::Rest::TargetResourcesException.new("resource [#{method}] not found")
+        end
+      })
+      resCustomCodeHandler.exec(httpVerb: "GET", httpUrl: "/find_by_rank/Master").size.must_equal(3)
       
       resObjectHandler = EM::Rest::TargetResources.new(EmpireDB.new,ObjectHandler.new)
       resObjectHandler.exec(httpVerb: "GET", httpUrl: "/find_by_rank/Master").size.must_equal(3)
@@ -25,7 +31,7 @@ describe EM::Rest::TargetResources do
       resModuleHandler.exec(httpVerb: "GET", httpUrl: "/find_by_rank/Big Master").size.must_equal(1)
       
       resHashHandler = EM::Rest::TargetResources.new(EmpireDB.new,{
-        find_by_rank: lambda{|resources,args| resources.empire.select{|r|r[:rank] == args[:urlParams][0]}}
+        find_by_rank: lambda{|empireDB,args| empireDB.empire.select{|r|r[:rank] == args}}
       })
       resHashHandler.exec(httpVerb: "GET", httpUrl: "/find_by_rank/Big Master").size.must_equal(1)
       
