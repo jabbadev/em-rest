@@ -15,6 +15,10 @@ describe EM::Rest::TargetResources do
       resource.exec(httpVerb: "GET", httpUrl: "/find_by_name/Yo")[0][:rank].must_equal("Big Master")
       resource.exec(httpVerb: "GET", httpUrl: "/find_by_name/Dart").size.must_equal(3)
       
+      lambda {
+        resource.exec(httpVerb: "GET", httpUrl: "/get/2/undefMethod", endUrlParams: false)
+      }.must_raise(EM::Rest::TargetResourcesException)
+      
       resCustomCodeHandler = EM::Rest::TargetResources.new(EmpireDB.new,lambda{|empireDB,method,args|
         if method == :find_by_rank 
           empireDB.empire.select{|r| r[:rank] == args }
@@ -34,10 +38,6 @@ describe EM::Rest::TargetResources do
         find_by_rank: lambda{|empireDB,args| empireDB.empire.select{|r|r[:rank] == args}}
       })
       resHashHandler.exec(httpVerb: "GET", httpUrl: "/find_by_rank/Big Master").size.must_equal(1)
-      
-      lambda {
-         resource.exec(httpVerb: "GET", httpUrl: "/get/sith/2", endUrlParams: false)
-      }.must_raise(EM::Rest::TargetResourcesException)
       
       resGestNoEndParamUrl = EM::Rest::TargetResources.new(EmpireDB.new,GestNoEndParamUrl.new)
       resGestNoEndParamUrl.exec(httpVerb: "GET", httpUrl: "/_empire/sith/1/name", endUrlParams: false).must_equal("Darth Maul")
