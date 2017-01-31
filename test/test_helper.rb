@@ -19,7 +19,7 @@ class EmpireDB
     @data
   end
   
-  def get(index)
+  def get(index,filter=nil)
     @data[index]
   end
     

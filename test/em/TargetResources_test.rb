@@ -9,19 +9,24 @@ describe EM::Rest::TargetResources do
     it "GET request" do
       resource = EM::Rest::TargetResources.new(EmpireDB.new)
       resource.exec(httpVerb: "GET", httpUrl: "/empire")[0][:name].must_equal("Darth Sidious")
+     
+         
+     
       resource.exec(httpVerb: "GET", httpUrl: "/empire/at/3")[:name].must_equal("Luke Skywalker")
       resource.exec(httpVerb: "GET", httpUrl: "/get/3")[:name].must_equal("Luke Skywalker")
       resource.exec(httpVerb: "GET", httpUrl: "/getByType/sith/at/2")[:name].must_equal("Darth Vader")
       resource.exec(httpVerb: "GET", httpUrl: "/find_by_name/Yo")[0][:rank].must_equal("Big Master")
       resource.exec(httpVerb: "GET", httpUrl: "/find_by_name/Dart").size.must_equal(3)
       
-      lambda {
-        resource.exec(httpVerb: "GET", httpUrl: "/get/2/undefMethod", endUrlParams: false)
-      }.must_raise(EM::Rest::TargetResourcesException)
+      resource.exec(httpVerb: "GET", httpUrl: "/get/3", reqParams: [ :name, :rank ] ).must_equal("Luke Skywalker")
       
-      resCustomCodeHandler = EM::Rest::TargetResources.new(EmpireDB.new,lambda{|empireDB,method,args|
+#      lambda {
+#        resource.exec(httpVerb: "GET", httpUrl: "/get/2/undefMethod", endUrlParams: false)
+#      }.must_raise(EM::Rest::TargetResourcesException)
+      
+      resCustomCodeHandler = EM::Rest::TargetResources.new(EmpireDB.new,lambda{|empireDB,method,urlParam|
         if method == :find_by_rank 
-          empireDB.empire.select{|r| r[:rank] == args }
+          empireDB.empire.select{|r| r[:rank] == urlParam }
         else
           raise EM::Rest::TargetResourcesException.new("resource [#{method}] not found")
         end

@@ -68,13 +68,23 @@ module EventMachine
                 args[:params] = self._nextUrlParam(resUrl[i+1],arguments)
                 i += 1  
               end
-            elsif resInfo[:type] == :method 
-              if resInfo[:nargs] == 1
+            elsif resInfo[:type] == :method
+              if ( resInfo[:nargs] == 0 or resInfo[:nargs] == -1 )
+                args[:params] = []
+              elsif resInfo[:nargs] == 1 or resInfo[:nargs] == -2
+                ### method(url_param,<req_param>)or method(<url_param>,*req_params) ###
                 args[:params] = self._nextUrlParam(resUrl[i+1],arguments)
                 i += 1
+                if i == lastIndex
+                  args[:params].push(args[:reqParams])
+                end
               end
+            else
+              
+              raise ResourceNotFound, "Resource not found [#{method}]"  
             end
           else
+            
             unless args[:reqParams].nil?
               
               if args[:reqParams].is_a?Array
@@ -159,6 +169,12 @@ module EventMachine
      
     end
   
+    class ResourceNotFound < StandardError
+      def initialize(msg="Resource Not Found")
+        super(msg)
+      end
+    end
+    
     class TargetResourcesException < StandardError
       def initialize(msg="Exception on target resouces")
         super
