@@ -7,23 +7,30 @@ describe EM::Rest::TargetResources do
   
   describe "Expose an object as web resource" do
     it "GET request" do
+      
+      srtResorce = EM::Rest::TargetResources.new("star wars empire")
+      srtResorce.exec(httpVerb: "GET", httpUrl: "/slice",reqParams: [5,4] ).must_equal("wars")
+      srtResorce.exec(httpVerb: "GET", httpUrl: "/slice",reqParams: 5 ).must_equal("w")
+      srtResorce.exec(httpVerb: "GET", httpUrl: "/upcase/slice", reqParams: [5,4] ).must_equal("WARS")
+      srtResorce.exec(httpVerb: "GET", httpUrl: "/concat/", reqParams: " droids" ).must_equal("star wars empire droids")
+      
       resource = EM::Rest::TargetResources.new(EmpireDB.new)
       resource.exec(httpVerb: "GET", httpUrl: "/empire")[0][:name].must_equal("Darth Sidious")
-     
-         
-     
       resource.exec(httpVerb: "GET", httpUrl: "/empire/at/3")[:name].must_equal("Luke Skywalker")
       resource.exec(httpVerb: "GET", httpUrl: "/get/3")[:name].must_equal("Luke Skywalker")
+              
+      lambda {
+        resource.exec(httpVerb: "GET", httpUrl: "/empireWithReqParams", reqParams: [:name,:type])[2].must_equal({name: "Darth Vader", type: "sith"})
+      }.must_raise(ArgumentError)
+      resource.exec(httpVerb: "GET", httpUrl: "/empireWithReqParams", reqParams: [:name,:type], arrayAsMethodArguments: false)[2].must_equal({name: "Darth Vader", type: "sith"})
+        
+      resource.exec(httpVerb: "GET", httpUrl: "/getWithReqParams/3",reqParams: [:name,:type]).must_equal({name: "Luke Skywalker", type: "jedi"})
+      
+            
       resource.exec(httpVerb: "GET", httpUrl: "/getByType/sith/at/2")[:name].must_equal("Darth Vader")
       resource.exec(httpVerb: "GET", httpUrl: "/find_by_name/Yo")[0][:rank].must_equal("Big Master")
       resource.exec(httpVerb: "GET", httpUrl: "/find_by_name/Dart").size.must_equal(3)
-      
-      resource.exec(httpVerb: "GET", httpUrl: "/get/3", reqParams: [ :name, :rank ] ).must_equal("Luke Skywalker")
-      
-#      lambda {
-#        resource.exec(httpVerb: "GET", httpUrl: "/get/2/undefMethod", endUrlParams: false)
-#      }.must_raise(EM::Rest::TargetResourcesException)
-      
+            
       resCustomCodeHandler = EM::Rest::TargetResources.new(EmpireDB.new,lambda{|empireDB,method,urlParam|
         if method == :find_by_rank 
           empireDB.empire.select{|r| r[:rank] == urlParam }

@@ -22,7 +22,10 @@ module EventMachine
         httpVerb = arguments[:httpVerb]
         httpUrl = arguments[:httpUrl]
         reqParams = arguments[:reqParams]
-        arguments = {endUrlParams: true,convertNumbers: true}.merge(arguments)
+        arguments = {
+          convertNumbers: true,
+          arrayAsMethodArguments: true 
+        }.merge(arguments)
         
         resUrl = httpUrl.split('/')
         resUrl.shift
@@ -70,13 +73,15 @@ module EventMachine
               end
             elsif resInfo[:type] == :method
               if ( resInfo[:nargs] == 0 or resInfo[:nargs] == -1 )
+                ### call method without params
                 args[:params] = []
-              elsif resInfo[:nargs] == 1 or resInfo[:nargs] == -2
+              elsif resInfo[:nargs] >= 1 or resInfo[:nargs] <= -2
                 ### method(url_param,<req_param>)or method(<url_param>,*req_params) ###
                 args[:params] = self._nextUrlParam(resUrl[i+1],arguments)
                 i += 1
                 if i == lastIndex
-                  args[:params].push(args[:reqParams])
+                  args = self._addRequestParams(args,arguments)
+                  #args[:params].push(args[:reqParams]) unless args[:reqParams].nil?
                 end
               end
             else
@@ -84,22 +89,33 @@ module EventMachine
               raise ResourceNotFound, "Resource not found [#{method}]"  
             end
           else
-            
-            unless args[:reqParams].nil?
-              
-              if args[:reqParams].is_a?Array
-                args[:params] = args[:reqParams]
-              else
-                args[:params] = [ args[:reqParams] ]
-              end
-            end 
+            args = self._addRequestParams(args,arguments)
           end
           
-          resObj = self.execCode(resInfo,resObj,args)
+          begin
+            resObj = self.execCode(resInfo,resObj,args)
+          rescue ArgumentError => e
+            raise ArgumentError.new("#{e.message} calling: #{resInfo} with params: [#{args[:params]}]")  
+          end
                    
         end ## end loop on chunk url method
         
         resObj
+      end
+      
+      def _addRequestParams(args,arguments)
+        unless args[:reqParams].nil?
+          if args[:reqParams].is_a?Array and
+            if arguments[:arrayAsMethodArguments]
+              args[:params].concat(args[:reqParams])
+            else
+              args[:params].push(args[:reqParams])
+            end
+          else
+            args[:params].push(args[:reqParams])
+          end
+        end
+        args
       end
       
       def _nextUrlParam(nextMethod,arguments)
@@ -116,6 +132,7 @@ module EventMachine
           args[:params].insert(0,resObj)
           return @customHandler.send(resInfo[:name],*args[:params])
         elsif resInfo[:type] == :method
+          p args[:params]
           return resObj.send(resInfo[:name],*args[:params])
         end
         
@@ -168,7 +185,7 @@ module EventMachine
       end
      
     end
-  
+ 
     class ResourceNotFound < StandardError
       def initialize(msg="Resource Not Found")
         super(msg)

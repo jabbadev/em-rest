@@ -19,8 +19,17 @@ class EmpireDB
     @data
   end
   
-  def get(index,filter=nil)
+  def empireWithReqParams(filter)
+    @data.collect{|row| row.select{|k,v|filter.include?k}}
+  end
+  
+  def get(index)
     @data[index]
+  end
+  
+  def getWithReqParams(index,*filter)
+    p index,filter
+    self.get(index).select{|k,v|filter.include?k}
   end
     
   def getByIndex(i)
