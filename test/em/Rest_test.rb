@@ -12,15 +12,16 @@ describe EM::Rest do
           p "wait for"
           if EM.reactor_running?
             
-           EM.start_server "10.55.68.138", 1991 , EventMachine::Rest::Connection, "pippo", nil
+           server = EM.start_server "127.0.0.1",1991, EventMachine::Rest::Connection,EmpireDB.new, nil
+           p server
            
-           empireGET = EventMachine::HttpRequest.new('http://10.55.68.138:1991/empire').get
-           empireGET.callback {|response|
-                puts response[:status]
-                puts response[:headers]
-                puts response[:content]
-                  assert true
-           }
+           empireGET = EventMachine::HttpRequest.new('http://127.0.0.1:1991/empire').get
+#           empireGET.callback {|response|
+#                puts response[:status]
+#                puts response[:headers]
+#                puts response[:content]
+#                  assert true
+#           }
             
           end
          
