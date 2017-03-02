@@ -26,7 +26,6 @@ describe EM::Rest::TargetResources do
         
       resource.exec(httpVerb: "GET", httpUrl: "/getWithReqParams/3",reqParams: [:name,:type]).must_equal({name: "Luke Skywalker", type: "jedi"})
       
-            
       resource.exec(httpVerb: "GET", httpUrl: "/getByType/sith/at/2")[:name].must_equal("Darth Vader")
       resource.exec(httpVerb: "GET", httpUrl: "/find_by_name/Yo")[0][:rank].must_equal("Big Master")
       resource.exec(httpVerb: "GET", httpUrl: "/find_by_name/Dart").size.must_equal(3)

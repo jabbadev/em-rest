@@ -5,9 +5,24 @@ module EventMachine
   module Rest
      
     class Connection < EventMachine::Connection
-      def initialize(resources,getHandler=nil)
-         @target = TargetResouces.new(resources,customHandler)
+      def initialize(resources,customHandler=nil)
+         p "initialize ...."
+         #@target = EM::Rest::TargetResources.new(resources,customHandler)
+        @target = TargetResources.new(resources,customHandler)
       end
+      
+      def post_init()
+        p "post init"
+        @data = ""
+        @body = ""
+        @isHeaderParsed = false 
+      end
+      
+      def receive_data(data)
+        @data += data
+        p @data
+      end      
+      
     end
     
     class TargetResources
