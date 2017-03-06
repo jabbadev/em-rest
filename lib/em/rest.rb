@@ -1,27 +1,77 @@
 require 'eventmachine'
 require "em/rest/version"
+require "json"
 
 module EventMachine
   module Rest
      
     class Connection < EventMachine::Connection
       def initialize(resources,customHandler=nil)
-         p "initialize ...."
-         #@target = EM::Rest::TargetResources.new(resources,customHandler)
         @target = TargetResources.new(resources,customHandler)
       end
       
       def post_init()
-        p "post init"
         @data = ""
-        @body = ""
-        @isHeaderParsed = false 
+        @body = nil
+        @sectionHeader = false 
       end
       
       def receive_data(data)
         @data += data
-        p @data
-      end      
+        if @data =~ /\r\n\r\n/ and !@sectionHeader
+          @sectionHeader = true
+          (h,b) = @data.split("\r\n\r\n")
+          headers = h.split("\r\n")
+          reqLine = headers.shift
+          ( @method, @uri, @httpVer ) = reqLine.split(" ")
+          
+          @urlReqParams = (@uri =~ /\?(.+$)/) && /\?(.+$)/.match(@uri)[1].split("&") || nil
+          
+          @headers = headers.map{|h| /(^[^()<>@\,;:"\/\[\]?={}]+):\s+(.+$)/.match(h)[1,2] }.to_h
+          
+          if @headers.key?'Content-Length' and @headers['Content-Length'].to_i > 0
+            @cl = @headers['Content-Length'].to_i
+            @data = @body = b
+            if @body.size == @cl
+              self.gestRequest()
+            end
+          else
+            self.gestRequest()
+          end
+        else
+          @body += data
+          if @body.size == @cl
+            self.gestRequest()
+          end
+        end
+      end    
+      
+      def gestRequest
+  
+        if @method == "GET"
+          data = @target.exec(httpVerb: "GET", httpUrl: @uri ,reqParams: @urlReqParams )
+        elsif @method == "POST"
+          if @headers["Content-Type"] == "application/json"
+            reqParams = (!@body.nil?) && JSON.parse(@body)||nil
+          else
+            reqParams = @body
+          end
+          data = @target.exec(httpVerb: "POST", httpUrl: @uri ,reqParams: reqParams)
+        end
+         
+        unless data.nil?
+          chunk = data.to_json       
+          send_data("#{@httpVer} 200 OK\r\n")           
+          send_data("Content-Type: application/json;charset=UTF-8\r\n")
+          send_data("transfer-encoding: chunked\r\n")
+          send_data("\r\n")
+          send_data("#{chunk.size.to_s(16)}\r\n") ### Exadecimal size chunk ###
+          send_data("#{chunk}\r\n")
+          send_data("0\r\n")
+          send_data("\r\n")
+        end
+        
+      end
       
     end
     
