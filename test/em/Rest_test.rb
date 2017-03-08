@@ -40,7 +40,7 @@ describe EM::Rest do
           
           empireGET = EventMachine::HttpRequest.new('http://127.0.0.1:1991/empire/size').get
           empireGET.callback {|r|
-            p r.response
+            r.response.to_i.must_equal(7)
             done!
           }
           
