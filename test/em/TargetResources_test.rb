@@ -18,7 +18,10 @@ describe EM::Rest::TargetResources do
       resource.exec(httpVerb: "GET", httpUrl: "/empire")[0][:name].must_equal("Darth Sidious")
       resource.exec(httpVerb: "GET", httpUrl: "/empire/at/3")[:name].must_equal("Luke Skywalker")
       resource.exec(httpVerb: "GET", httpUrl: "/get/3")[:name].must_equal("Luke Skywalker")
-              
+        
+      resource.exec(httpVerb: "GET", httpUrl: "/sith")[1][:name].must_equal("Darth Maul")
+      resource.exec(httpVerb: "GET", httpUrl: "/sith/1")[:name].must_equal("Darth Maul")  
+       
       lambda {
         resource.exec(httpVerb: "GET", httpUrl: "/empireWithReqParams", reqParams: [:name,:type])[2].must_equal({name: "Darth Vader", type: "sith"})
       }.must_raise(ArgumentError)

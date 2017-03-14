@@ -19,6 +19,10 @@ class EmpireDB
     @data
   end
   
+  def sith(id=nil)
+    ( !id.nil? ) && @data[id] || @data.select{|row| row[:type] == 'sith' }
+  end
+  
   def empireWithReqParams(filter)
     @data.collect{|row| row.select{|k,v|filter.include?k}}
   end
