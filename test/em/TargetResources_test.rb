@@ -18,10 +18,7 @@ describe EM::Rest::TargetResources do
       resource.exec(httpVerb: "GET", httpUrl: "/empire")[0][:name].must_equal("Darth Sidious")
       resource.exec(httpVerb: "GET", httpUrl: "/empire/at/3")[:name].must_equal("Luke Skywalker")
       resource.exec(httpVerb: "GET", httpUrl: "/get/3")[:name].must_equal("Luke Skywalker")
-        
-      resource.exec(httpVerb: "GET", httpUrl: "/sith")[1][:name].must_equal("Darth Maul")
-      resource.exec(httpVerb: "GET", httpUrl: "/sith/1")[:name].must_equal("Darth Maul")  
-       
+          
       lambda {
         resource.exec(httpVerb: "GET", httpUrl: "/empireWithReqParams", reqParams: [:name,:type])[2].must_equal({name: "Darth Vader", type: "sith"})
       }.must_raise(ArgumentError)
@@ -32,30 +29,42 @@ describe EM::Rest::TargetResources do
       resource.exec(httpVerb: "GET", httpUrl: "/getByType/sith/at/2")[:name].must_equal("Darth Vader")
       resource.exec(httpVerb: "GET", httpUrl: "/find_by_name/Yo")[0][:rank].must_equal("Big Master")
       resource.exec(httpVerb: "GET", httpUrl: "/find_by_name/Dart").size.must_equal(3)
-            
-      resCustomCodeHandler = EM::Rest::TargetResources.new(EmpireDB.new,lambda{|empireDB,method,urlParam|
-        if method == :find_by_rank 
-          empireDB.empire.select{|r| r[:rank] == urlParam }
-        else
-          raise EM::Rest::TargetResourcesException.new("resource [#{method}] not found")
-        end
+     
+      ### Custom Handler ###
+      
+      resCustomCodeHandler = EM::Rest::TargetResources.new(EmpireDB.new,
+        custom_handler: 
+          lambda{|empireDB,method,urlParam|
+            if method == :find_by_rank 
+              empireDB.empire.select{|r| r[:rank] == urlParam }
+            else
+              raise EM::Rest::TargetResourcesException.new("resource [#{method}] not found")
+            end
       })
+        
       resCustomCodeHandler.exec(httpVerb: "GET", httpUrl: "/find_by_rank/Master").size.must_equal(3)
       
-      resObjectHandler = EM::Rest::TargetResources.new(EmpireDB.new,ObjectHandler.new)
+      resObjectHandler = EM::Rest::TargetResources.new(EmpireDB.new, custom_handler: ObjectHandler.new)
       resObjectHandler.exec(httpVerb: "GET", httpUrl: "/find_by_rank/Master").size.must_equal(3)
       
-      resModuleHandler = EM::Rest::TargetResources.new(EmpireDB.new,ModuleHandler)
+      resModuleHandler = EM::Rest::TargetResources.new(EmpireDB.new,custom_handler: ModuleHandler)
       resModuleHandler.exec(httpVerb: "GET", httpUrl: "/find_by_rank/Big Master").size.must_equal(1)
       
-      resHashHandler = EM::Rest::TargetResources.new(EmpireDB.new,{
+      resHashHandler = EM::Rest::TargetResources.new(EmpireDB.new,custom_handler: {
         find_by_rank: lambda{|empireDB,args| empireDB.empire.select{|r|r[:rank] == args}}
       })
       resHashHandler.exec(httpVerb: "GET", httpUrl: "/find_by_rank/Big Master").size.must_equal(1)
       
-      resGestNoEndParamUrl = EM::Rest::TargetResources.new(EmpireDB.new,GestNoEndParamUrl.new)
+      resGestNoEndParamUrl = EM::Rest::TargetResources.new(EmpireDB.new,custom_handler: GestNoEndParamUrl.new)
       #resGestNoEndParamUrl.exec(httpVerb: "GET", httpUrl: "/_empire/sith/1/name", endUrlParams: false).must_equal("Darth Maul")
       #resGestNoEndParamUrl.exec(httpVerb: "GET", httpUrl: "/_empire/sith/2/rank/upcase", endUrlParams: false).must_equal("APPRENTICE")
+      
+      ### Mapper ###
+      
+      resourceWithMapper = EM::Rest::TargetResources.new(EmpireDB.new,
+        url_mapper: ["/sith/(\\d+)"] )
+      resourceWithMapper.exec(httpVerb: "GET", httpUrl: "/sith")[1][:name].must_equal("Darth Maul")
+      resourceWithMapper.exec(httpVerb: "GET", httpUrl: "/sith/1")[:name].must_equal("Darth Maul")
       
     end
     

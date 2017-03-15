@@ -77,9 +77,16 @@ module EventMachine
     
     class TargetResources
       
-      def initialize(resources,customHandler=nil)
+      def initialize(resources,options={})
+        options = {
+          url_mapper: [],
+          custom_handler: nil
+        }.merge(options)
+        
         @resources = resources
-        @customHandler = customHandler
+        @customHandler = options[:custom_handler]
+        @urlMapper = options[:url_mapper].collect{|url| { mapper: url, regexp: Regexp.new(url) }}
+        
       end
       
       def exec(arguments)
@@ -95,6 +102,19 @@ module EventMachine
         resUrl = httpUrl.split('/')
         resUrl.shift
         
+        matchValues = nil
+        unless @urlMapper.empty?
+          @urlMapper.each do |mapper|
+            m = mapper[:regexp].match(httpUrl)
+            if m
+              matchValues = m.to_a
+              matchValues.shift
+              resUrl = mapper[:mapper].split('/')
+              resUrl.shift  
+            end 
+          end
+        end
+         
         args = { httpVerb: httpVerb,
                  httpUrl: httpUrl,
                  reqParams: reqParams,
@@ -117,7 +137,7 @@ module EventMachine
           
           nextResInfo = nil
           resInfo = self._resInfo(method,resObj)
-          p resInfo
+          #p resInfo
           unless lastIndex == i
             
             if resInfo[:type] == :customBlock
@@ -137,9 +157,16 @@ module EventMachine
                 i += 1  
               end
             elsif resInfo[:type] == :method
-              if ( resInfo[:nargs] == 0 or resInfo[:nargs] == -1 )
+              if resInfo[:nargs] == 0
                 ### call method without params
                 args[:params] = []
+              elsif resInfo[:nargs] == -1
+                ### Check if next resUrl is a param mapper value ###
+                if resUrl[i+1] =~ /^\(.+\)$/
+                  resUrl[i+1] = matchValues.shift
+                  args[:params] = self._nextUrlParam(resUrl[i+1],arguments)
+                  i += 1
+                end
               elsif resInfo[:nargs] >= 1 or resInfo[:nargs] <= -2
                 ### method(url_param,<req_param>)or method(<url_param>,*req_params) ###
                 args[:params] = self._nextUrlParam(resUrl[i+1],arguments)
@@ -158,6 +185,7 @@ module EventMachine
           end
           
           begin
+            #p "fire exec resinfo: #{resInfo}, #{resObj}, #{args}"
             resObj = self.execCode(resInfo,resObj,args)
           rescue ArgumentError => e
             raise ArgumentError.new("#{e.message} calling: #{resInfo} with params: [#{args[:params]}]")  
@@ -197,7 +225,6 @@ module EventMachine
           args[:params].insert(0,resObj)
           return @customHandler.send(resInfo[:name],*args[:params])
         elsif resInfo[:type] == :method
-          p args[:params]
           return resObj.send(resInfo[:name],*args[:params])
         end
         

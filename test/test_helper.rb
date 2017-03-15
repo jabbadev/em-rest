@@ -32,7 +32,6 @@ class EmpireDB
   end
   
   def getWithReqParams(index,*filter)
-    p index,filter
     self.get(index).select{|k,v|filter.include?k}
   end
     
