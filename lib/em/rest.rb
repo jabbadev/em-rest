@@ -6,8 +6,8 @@ module EventMachine
   module Rest
      
     class Connection < EventMachine::Connection
-      def initialize(resources,customHandler=nil)
-        @target = TargetResources.new(resources,customHandler)
+      def initialize(resources,options={})
+        @target = TargetResources.new(resources,options)
       end
       
       def post_init()
@@ -47,27 +47,35 @@ module EventMachine
       end    
       
       def gestRequest
-  
-        if @method == "GET"
-          data = @target.exec(httpVerb: "GET", httpUrl: @uri ,reqParams: @urlReqParams )
-        elsif @method == "POST"
-          if @headers["Content-Type"] == "application/json"
-            reqParams = (!@body.nil?) && JSON.parse(@body)||nil
-          else
-            reqParams = @body
+        begin 
+          if @method == "GET"
+            data = @target.exec(httpVerb: "GET", httpUrl: @uri ,reqParams: @urlReqParams )
+          elsif @method == "POST"
+            if @headers["Content-Type"] == "application/json"
+              reqParams = (!@body.nil?) && JSON.parse(@body)||nil
+            else
+              reqParams = @body
+            end
+            
+            data = @target.exec(httpVerb: "POST", httpUrl: @uri ,reqParams: reqParams)
           end
-          data = @target.exec(httpVerb: "POST", httpUrl: @uri ,reqParams: reqParams)
-        end
          
-        unless data.nil?
-          chunk = data.to_json       
-          send_data("#{@httpVer} 200 OK\r\n")           
-          send_data("Content-Type: application/json;charset=UTF-8\r\n")
-          send_data("transfer-encoding: chunked\r\n")
-          send_data("\r\n")
-          send_data("#{chunk.size.to_s(16)}\r\n") ### Exadecimal size chunk ###
-          send_data("#{chunk}\r\n")
-          send_data("0\r\n")
+          unless data.nil?
+            chunk = data.to_json       
+            send_data("#{@httpVer} 200 OK\r\n")           
+            send_data("Content-Type: application/json;charset=UTF-8\r\n")
+            send_data("transfer-encoding: chunked\r\n")
+            send_data("\r\n")
+            send_data("#{chunk.size.to_s(16)}\r\n") ### Exadecimal size chunk ###
+            send_data("#{chunk}\r\n")
+            send_data("0\r\n")
+            send_data("\r\n")
+          end
+        
+        rescue 
+          send_data("#{@httpVer} 500 Internal Server Error\r\n")
+          send_data("Content-Length: 0\r\n")
+          send_data("Connection: close\r\n")
           send_data("\r\n")
         end
         
