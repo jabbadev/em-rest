@@ -12,7 +12,7 @@ module EventMachine
       
       def post_init()
         @data = ""
-        @body = nil
+        @body = ""
         @sectionHeader = false 
       end
       
